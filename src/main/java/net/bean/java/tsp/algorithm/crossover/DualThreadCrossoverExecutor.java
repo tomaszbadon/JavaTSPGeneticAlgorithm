@@ -3,12 +3,16 @@ package net.bean.java.tsp.algorithm.crossover;
 import com.google.common.base.Stopwatch;
 import net.bean.java.tsp.algorithm.character.Individual;
 import net.bean.java.tsp.algorithm.population.Population;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 
 public class DualThreadCrossoverExecutor<T> implements CrossoverExecutor<T> {
+
+    private final Logger logger = LogManager.getLogger(DualThreadCrossoverExecutor.class);
 
     private final static int THREADS = 2;
 
@@ -22,7 +26,7 @@ public class DualThreadCrossoverExecutor<T> implements CrossoverExecutor<T> {
             Future<Population<T>> populationFuture1 = submit(crossover, subPopulations.get(0));
             Future<Population<T>> populationFuture2 = submit(crossover, subPopulations.get(1));
             Population<T> nextGenPopulation = populationFuture1.get().concat(populationFuture2.get());
-            System.out.println("Dual Threads Crossover took: " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + " ms for whole population");
+            logger.info("Dual Threads Crossover took: " + stopwatch.elapsed(TimeUnit.MILLISECONDS) + " ms for whole population");
             return nextGenPopulation;
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);

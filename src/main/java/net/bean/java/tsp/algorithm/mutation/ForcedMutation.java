@@ -3,6 +3,8 @@ package net.bean.java.tsp.algorithm.mutation;
 import net.bean.java.tsp.algorithm.character.Individual;
 import net.bean.java.tsp.algorithm.character.IndividualBuilder;
 import net.bean.java.tsp.algorithm.util.MinMaxNormalization;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -10,6 +12,8 @@ import java.util.List;
 import java.util.Random;
 
 public class ForcedMutation<T> implements Mutation<T> {
+
+    private final static Logger logger = LogManager.getLogger(ForcedMutation.class);
 
     private final static int RANGE_OF_MAX_FOR_NORMALIZATION = 100;
 
@@ -42,7 +46,7 @@ public class ForcedMutation<T> implements Mutation<T> {
             individual.getChromosomes().clear();
             individual.getChromosomes().addAll(newIndividual.getChromosomes());
             if(individual.getValueOfFitnessFunction() < initialCost) {
-                System.out.println("ValueOfFitnessFunction was reduced from: " + initialCost + " to " + individual.getValueOfFitnessFunction());
+                logger.info("ValueOfFitnessFunction was reduced from: " + initialCost + " to " + individual.getValueOfFitnessFunction());
             }
         }
     }

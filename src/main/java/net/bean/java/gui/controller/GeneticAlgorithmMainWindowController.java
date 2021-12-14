@@ -23,6 +23,8 @@ import net.bean.java.tsp.algorithm.genetic.generation.GeneticAlgorithmResult;
 import net.bean.java.tsp.algorithm.selection.Selection;
 import net.bean.java.tsp.algorithm.selection.ranking.RankingSelection;
 import net.bean.java.gui.callback.OnCompleteCallback;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.controlsfx.dialog.ExceptionDialog;
 
 import java.net.URL;
@@ -32,6 +34,8 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 public class GeneticAlgorithmMainWindowController implements Initializable, AfterEachIterationCallback<Generation<City>>, OnCompleteCallback<GeneticAlgorithmResult<City>>, OnStartCallback {
+
+    private final static Logger logger = LogManager.getLogger(GeneticAlgorithmMainWindowController.class);
 
     private Set<City> cities;
     private CityGraphicsContextDrawer drawer;
@@ -116,7 +120,7 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
     public void afterEachIteration(Generation<City> generation) {
         Platform.runLater(() -> {
             numberOfGenerations.ifPresent(generations -> {
-                System.out.println(ProgressCalculator.calculate(generation, generations));
+                logger.info(ProgressCalculator.calculate(generation, generations));
                 long progress = Math.round(ProgressCalculator.calculate(generation, generations) * 100);
                 statusLabel.setText("Progress: " + progress + "%");
             });
