@@ -27,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.controlsfx.dialog.ExceptionDialog;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -65,8 +66,7 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
 
     @FXML
     private void numberOfCitiesWasChanged() {
-        NumberOfCities numberOfCities = NumberOfCities.findByDescription(numberOfCitiesComboBox.getValue())
-                                                      .orElseThrow(() -> new RuntimeException("Cannot obtain number of Cities from Combobox using value: " + numberOfCitiesComboBox.getValue()));
+        NumberOfCities numberOfCities = NumberOfCities.findByDescription(numberOfCitiesComboBox.getValue()).get();
         cities = cityProvider.provide(numberOfCities);
         individualsTextField.setText(String.valueOf(numberOfCities.getDefaultNumberOfIndividuals()));
         generationsTextField.setText(String.valueOf(numberOfCities.getDefaultNumberOfGenerations()));
@@ -120,7 +120,7 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
                 long progress = Math.round(ProgressCalculator.calculate(generation, generations) * 100);
                 statusLabel.setText("Progress: " + progress + "%");
             });
-            if(generation.getNumberOfGeneration() == 1 || generation.getNumberOfGeneration() % 10 == 0) {
+            if(shouldBeCanvasRedrawn(generation.getNumberOfGeneration())) {
                 drawer.redrawAll(generation.getTheBestIndividual());
             }
         });
@@ -133,6 +133,11 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
             changeStateOfComponents(false);
             summaryLabel.setText("Completed in: " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds!");
         });
+    }
+
+    private boolean shouldBeCanvasRedrawn(int numberOfGeneration) {
+        final int updateCanvasEvery10Generations = 10;
+        return numberOfGeneration % updateCanvasEvery10Generations == 0 || numberOfGeneration == 1;
     }
 
     private Selection getSelection() {
