@@ -16,8 +16,7 @@ import net.bean.java.gui.executor.GeneticAlgorithmExecutor;
 import net.bean.java.gui.util.FxComponentStatusChanger;
 import net.bean.java.gui.util.ProgressCalculator;
 import net.bean.java.tsp.algorithm.city.City;
-import net.bean.java.tsp.algorithm.city.PredefinedCitySet;
-import net.bean.java.tsp.algorithm.city.RandomCityGenerator;
+import net.bean.java.tsp.algorithm.city.CityProvider;
 import net.bean.java.tsp.algorithm.genetic.generation.Generation;
 import net.bean.java.tsp.algorithm.genetic.generation.GeneticAlgorithmResult;
 import net.bean.java.tsp.algorithm.selection.Selection;
@@ -28,6 +27,7 @@ import org.apache.logging.log4j.Logger;
 import org.controlsfx.dialog.ExceptionDialog;
 
 import java.net.URL;
+import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.ResourceBundle;
 import java.util.Set;
@@ -37,10 +37,11 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
 
     private final static Logger logger = LogManager.getLogger(GeneticAlgorithmMainWindowController.class);
 
-    private Set<City> cities;
+    private Set<City> cities = Set.of();
     private CityGraphicsContextDrawer drawer;
     private OptionalInt numberOfGenerations = OptionalInt.empty();
     private Stopwatch stopwatch;
+    private final CityProvider cityProvider = new CityProvider();
     private final FxComponentStatusChanger statusChanger = new FxComponentStatusChanger(this);
 
     @FXML private Canvas canvas;
@@ -65,14 +66,10 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
 
     @FXML
     private void numberOfCitiesWasChanged() {
-        NumberOfCities numberOfCities = NumberOfCities.findByDescription(numberOfCitiesComboBox.getValue())
-                                                      .orElseThrow(() -> new RuntimeException("Cannot obtain number of Cities from Combobox using value: " + numberOfCitiesComboBox.getValue()));
-        if(numberOfCities.equals(NumberOfCities.BENCHMARK)) {
-            cities = PredefinedCitySet.defaultSet();
-        } else {
-            RandomCityGenerator randomCityGenerator = new RandomCityGenerator();
-            cities = randomCityGenerator.generate(numberOfCities.getNumberOfCities().getAsInt());
-        }
+        NumberOfCities numberOfCities = NumberOfCities.findByDescription(numberOfCitiesComboBox.getValue()).get();
+        cities = cityProvider.provide(numberOfCities);
+        individualsTextField.setText(String.valueOf(numberOfCities.getDefaultNumberOfIndividuals()));
+        generationsTextField.setText(String.valueOf(numberOfCities.getDefaultNumberOfGenerations()));
         drawer.clearBackground();
         drawer.drawCities(cities);
     }
@@ -120,11 +117,12 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
     public void afterEachIteration(Generation<City> generation) {
         Platform.runLater(() -> {
             numberOfGenerations.ifPresent(generations -> {
-                logger.info(ProgressCalculator.calculate(generation, generations));
                 long progress = Math.round(ProgressCalculator.calculate(generation, generations) * 100);
                 statusLabel.setText("Progress: " + progress + "%");
             });
-            drawer.redrawAll(generation.getTheBestIndividual());
+            if(shouldBeCanvasRedrawn(generation.getNumberOfGeneration())) {
+                drawer.redrawAll(generation.getTheBestIndividual());
+            }
         });
     }
 
@@ -135,6 +133,11 @@ public class GeneticAlgorithmMainWindowController implements Initializable, Afte
             changeStateOfComponents(false);
             summaryLabel.setText("Completed in: " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds!");
         });
+    }
+
+    private boolean shouldBeCanvasRedrawn(int numberOfGeneration) {
+        final int updateCanvasEvery10Generations = 10;
+        return numberOfGeneration % updateCanvasEvery10Generations == 0 || numberOfGeneration == 1;
     }
 
     private Selection getSelection() {
